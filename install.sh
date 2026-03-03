@@ -18,13 +18,13 @@ REPO="https://github.com/charmtv/v3mtp"
 print_banner() {
     clear
     echo ""
-    echo -e "${B}╔══════════════════════════════════════════════════╗${NC}"
-    echo -e "${B}║         ⚡ Telemt v3 管理工具 ⚡                ║${NC}"
-    echo -e "${B}║         高性能 Telegram MTProto 代理             ║${NC}"
-    echo -e "${B}║                                                  ║${NC}"
-    echo -e "${B}║  by：米粒                                        ║${NC}"
-    echo -e "${B}║  TG交流群：https://t.me/mlkjfx6                ║${NC}"
-    echo -e "${B}╚══════════════════════════════════════════════════╝${NC}"
+    echo -e "${B}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${B}║          ⚡ Telemt v3 管理工具 ⚡                 ║${NC}"
+    echo -e "${B}║       高性能 Telegram MTProto 代理                ║${NC}"
+    echo -e "${B}║                                                    ║${NC}"
+    echo -e "${B}║  by: 米粒                                         ║${NC}"
+    echo -e "${B}║  TG群: https://t.me/mlkjfx6                       ║${NC}"
+    echo -e "${B}╚════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
 
@@ -64,15 +64,17 @@ get_public_ip() {
 }
 
 get_random_port() {
-    local port
-    while true; do
+    local port used_ports
+    used_ports=$(ss -tlnp 2>/dev/null | awk '{print $4}' | grep -oP ':\K[0-9]+$' || true)
+    for i in $(seq 1 20); do
         port=$(( (RANDOM % 62312) + 1024 ))
-        if ! ss -tlnp 2>/dev/null | grep -q ":${port} " && \
-           ! netstat -tlnp 2>/dev/null | grep -q ":${port} "; then
+        if ! echo "$used_ports" | grep -qx "$port"; then
             echo "$port"
             return
         fi
     done
+    # 最终回退
+    echo $(( (RANDOM % 62312) + 1024 ))
 }
 
 is_installed() {
