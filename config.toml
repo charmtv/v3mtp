@@ -1,0 +1,49 @@
+### Telemt 基础配置文件
+# 我们认为这些设置对于大多数不需要尖端方法和参数或特殊解决方案的场景来说已经足够
+
+# === 基本设置 ===
+[general]
+use_middle_proxy = false
+# 当用户在 [access.user_ad_tags] 中没有独立标签时的全局广告标签回退
+# ad_tag = "00000000000000000000000000000000"
+# 每用户广告标签在 [access.user_ad_tags] 中设置（从 @MTProxybot 获取的 32 位 HEX）
+
+# === 日志级别 ===
+# 日志级别: debug | verbose | normal | silent
+# 可通过 --silent 或 --log-level 命令行参数覆盖
+# RUST_LOG 环境变量优先级高于以上所有设置
+log_level = "normal"
+
+[general.modes]
+classic = false
+secure = false
+tls = true
+
+[general.links]
+show = "*"
+# show = ["alice", "bob"] # 仅显示 alice 和 bob 的链接
+# show = "*"              # 显示所有用户的链接
+# public_host = "proxy.example.com"  # tg:// 链接中的主机（IP 或域名）
+# public_port = 443                  # tg:// 链接中的端口（默认: server.port）
+
+# === 服务器绑定 ===
+[server]
+port = 443
+# proxy_protocol = false           # 如果在 HAProxy/nginx 后面使用 PROXY 协议则启用
+# metrics_port = 9090
+# metrics_whitelist = ["127.0.0.1", "::1", "0.0.0.0/0"]
+
+# 监听多个接口/IP - IPv4
+[[server.listeners]]
+ip = "0.0.0.0"
+
+# === 反审查 & 伪装 ===
+[censorship]
+tls_domain = "www.google.com"
+mask = true
+tls_emulation = true        # 获取真实证书长度并模拟 TLS 记录
+tls_front_dir = "tlsfront"   # TLS 模拟缓存目录
+
+[access.users]
+# 格式: "用户名" = "32位HEX密钥"
+hello = "00000000000000000000000000000000"
