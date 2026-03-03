@@ -34,6 +34,9 @@ print_banner() {
     echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║${NC}${BOLD}${WHITE}         ⚡ Telemt v3 管理工具 ⚡                ${NC}${CYAN}║${NC}"
     echo -e "${CYAN}║${NC}${DIM}         高性能 Telegram MTProto 代理             ${NC}${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}                                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  ${YELLOW}by：米粒${NC}                                        ${CYAN}║${NC}"
+    echo -e "${CYAN}║${NC}  ${DIM}TG交流群：${NC}${GREEN}https://t.me/mlkjfx6${NC}                ${CYAN}║${NC}"
     echo -e "${CYAN}╚══════════════════════════════════════════════════╝${NC}"
     echo ""
 }
