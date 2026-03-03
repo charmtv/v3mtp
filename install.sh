@@ -24,21 +24,6 @@ ok()   { echo -e "  ${B}[OK] $1${NC}"; }
 warn() { echo -e "  ${B}[!] $1${NC}"; }
 err()  { echo -e "  ${B}[X] $1${NC}"; }
 info() { echo -e "  ${B}[i] $1${NC}"; }
-ask() {
-    local p="$1" d="$2" r
-    if [ -n "$d" ]; then
-        echo -ne "  ${B}> $p [$d]: ${NC}"
-    else
-        echo -ne "  ${B}> $p: ${NC}"
-    fi
-    read r
-    if [ -z "$r" ]; then echo "$d"; else echo "$r"; fi
-}
-wait_key() {
-    echo ""
-    echo -ne "  ${DIM}按 Enter 返回...${NC}"
-    read
-}
 get_ip() {
     local i
     i=$(curl -4 -s --max-time 5 https://api.ipify.org 2>/dev/null)
@@ -101,70 +86,83 @@ links() {
     echo -e "  ${B}https://t.me/proxy?server=${ip}&port=${pt}&secret=${fs}${NC}"
     echo ""
 }
+presskey() {
+    echo ""
+    echo -ne "  ${DIM}按 Enter 返回...${NC}"
+    read dummy
+}
 do_install() {
     banner
     if chk; then
-        warn 'Already installed, uninstall first'
-        wait_key
+        warn "已安装, 如需重装请先卸载"
+        presskey
         return
     fi
     echo -e "  ${B}* 全新安装 Telemt${NC}"
     line
     echo ""
-    info 'Getting public IP...'
+    info "正在获取公网 IP..."
     PIP=$(get_ip)
     if [ -z "$PIP" ]; then
-        warn 'Cannot get public IP'
-        PIP=$(ask 'Enter IP' '')
+        warn "无法获取公网 IP"
+        echo -ne "  ${B}> 手动输入IP: ${NC}"
+        read PIP
     else
-        ok "IP: $PIP"
+        ok "公网 IP: $PIP"
     fi
     echo ""
     echo -e "  ${B}* 基础配置${NC}"
     echo ""
     RP=$(rnd_port)
-    PT=$(ask 'Port' "$RP")
-    DM=$(ask 'Domain' 'www.tesla.com')
+    echo -ne "  ${B}> 端口 [$RP]: ${NC}"
+    read input_port
+    PT=${input_port:-$RP}
+    echo -ne "  ${B}> 伪装域名 [www.tesla.com]: ${NC}"
+    read input_domain
+    DM=${input_domain:-www.tesla.com}
     echo ""
     echo -e "  ${B}* 用户配置${NC}"
     echo ""
-    UN=$(ask 'Username' 'MLKJFX')
+    echo -ne "  ${B}> 用户名 [MLKJFX]: ${NC}"
+    read input_user
+    UN=${input_user:-MLKJFX}
     SC=$(openssl rand -hex 16)
-    ok "Secret: $SC"
+    ok "已生成密钥: $SC"
     echo ""
     line
     echo ""
     echo -e "  ${B}* 确认配置${NC}"
     echo ""
     echo -e "  ${B}  IP:       $PIP${NC}"
-    echo -e "  ${B}  Port:     $PT${NC}"
-    echo -e "  ${B}  Domain:   $DM${NC}"
-    echo -e "  ${B}  User:     $UN${NC}"
-    echo -e "  ${B}  Secret:   $SC${NC}"
+    echo -e "  ${B}  端口:     $PT${NC}"
+    echo -e "  ${B}  域名:     $DM${NC}"
+    echo -e "  ${B}  用户名:   $UN${NC}"
+    echo -e "  ${B}  密钥:     $SC${NC}"
     echo ""
-    CF2=$(ask 'Install? (Y/n)' 'Y')
-    if [ "$CF2" = n ] || [ "$CF2" = N ]; then
-        warn 'Cancelled'
-        wait_key
+    echo -ne "  ${B}> 确认安装? [Y/n]: ${NC}"
+    read input_confirm
+    if [ "$input_confirm" = "n" ] || [ "$input_confirm" = "N" ]; then
+        warn "已取消"
+        presskey
         return
     fi
     echo ""
     line
     echo ""
-    echo -e "  ${B}[1/5] Downloading...${NC}"
+    echo -e "  ${B}[1/5] 下载中...${NC}"
     local ar lc
     ar=$(uname -m)
     lc=gnu
     ldd --version 2>&1 | grep -iq musl && lc=musl
     if wget -qO- "$GH/releases/latest/download/telemt-${ar}-linux-${lc}.tar.gz" | tar xz 2>/dev/null; then
         mv telemt "$BP" && chmod +x "$BP"
-        ok 'Downloaded'
+        ok "下载完成"
     else
-        err 'Download failed'
-        wait_key
+        err "下载失败"
+        presskey
         return
     fi
-    echo -e "  ${B}[2/5] Writing config...${NC}"
+    echo -e "  ${B}[2/5] 写入配置...${NC}"
     cat > "$CF" <<EOF
 [general]
 [general.modes]
@@ -185,8 +183,8 @@ ip = "0.0.0.0"
 [access.users]
 $UN = "$SC"
 EOF
-    ok 'Config done'
-    echo -e "  ${B}[3/5] Creating service...${NC}"
+    ok "配置完成"
+    echo -e "  ${B}[3/5] 创建服务...${NC}"
     cat > "$SF" <<EOF
 [Unit]
 Description=Telemt
@@ -200,187 +198,194 @@ LimitNOFILE=65536
 [Install]
 WantedBy=multi-user.target
 EOF
-    ok 'Service created'
-    echo -e "  ${B}[4/5] Starting...${NC}"
+    ok "服务已创建"
+    echo -e "  ${B}[4/5] 启动服务...${NC}"
     systemctl daemon-reload
     systemctl start telemt
     systemctl enable telemt 2>/dev/null
-    ok 'Started'
-    echo -e "  ${B}[5/5] Generating links...${NC}"
+    ok "已启动"
+    echo -e "  ${B}[5/5] 生成链接...${NC}"
     sleep 2
     echo ""
     line
     echo ""
-    echo -e "  ${B}===== Telemt OK! =====${NC}"
+    echo -e "  ${B}===== Telemt 安装成功! =====${NC}"
     echo ""
     links "$PIP" "$PT" "$UN" "$SC" "$DM"
-    wait_key
+    presskey
 }
 do_update() {
     banner
-    if ! chk; then err 'Not installed'; wait_key; return; fi
-    echo -e "  ${B}* Update${NC}"
+    if ! chk; then err "未安装"; presskey; return; fi
+    echo -e "  ${B}* 更新 Telemt${NC}"
     line
     echo ""
-    echo -e "  ${B}[1/3] Stopping...${NC}"
+    echo -e "  ${B}[1/3] 停止服务...${NC}"
     systemctl stop telemt 2>/dev/null
-    ok 'Stopped'
-    echo -e "  ${B}[2/3] Downloading...${NC}"
+    ok "已停止"
+    echo -e "  ${B}[2/3] 下载中...${NC}"
     local ar lc
     ar=$(uname -m)
     lc=gnu
     ldd --version 2>&1 | grep -iq musl && lc=musl
     if wget -qO- "$GH/releases/latest/download/telemt-${ar}-linux-${lc}.tar.gz" | tar xz 2>/dev/null; then
         mv telemt "$BP" && chmod +x "$BP"
-        ok 'Downloaded'
+        ok "下载完成"
     else
-        err 'Failed'
+        err "下载失败"
         systemctl start telemt
-        wait_key
+        presskey
         return
     fi
-    echo -e "  ${B}[3/3] Starting...${NC}"
+    echo -e "  ${B}[3/3] 启动服务...${NC}"
     systemctl start telemt
-    ok 'Done!'
-    wait_key
+    ok "更新完成!"
+    presskey
 }
 do_links() {
     banner
-    if ! chk; then err 'Not installed'; wait_key; return; fi
-    echo -e "  ${B}* Links${NC}"
+    if ! chk; then err "未安装"; presskey; return; fi
+    echo -e "  ${B}* 连接链接${NC}"
     line
     echo ""
     links
-    wait_key
+    presskey
 }
 do_svc() {
     banner
-    if ! chk; then err 'Not installed'; wait_key; return; fi
-    echo -e "  ${B}* Service${NC}"
+    if ! chk; then err "未安装"; presskey; return; fi
+    echo -e "  ${B}* 服务管理${NC}"
     line
     echo ""
-    echo -e "  ${B}1)${NC} Start"
-    echo -e "  ${B}2)${NC} Stop"
-    echo -e "  ${B}3)${NC} Restart"
-    echo -e "  ${B}0)${NC} Back"
+    echo -e "  ${B}1)${NC} 启动"
+    echo -e "  ${B}2)${NC} 停止"
+    echo -e "  ${B}3)${NC} 重启"
+    echo -e "  ${B}0)${NC} 返回"
     echo ""
-    echo -ne "  ${B}> Choice: ${NC}"
+    echo -ne "  ${B}> 选择: ${NC}"
     read c
     echo ""
     case "$c" in
-        1) systemctl start telemt && ok 'Started';;
-        2) systemctl stop telemt && ok 'Stopped';;
-        3) systemctl restart telemt && ok 'Restarted';;
+        1) systemctl start telemt && ok "已启动";;
+        2) systemctl stop telemt && ok "已停止";;
+        3) systemctl restart telemt && ok "已重启";;
         0) return;;
     esac
-    wait_key
+    presskey
 }
 do_st() {
     banner
-    echo -e "  ${B}* Status${NC}"
+    echo -e "  ${B}* 服务状态${NC}"
     line
     echo ""
-    systemctl status telemt --no-pager -l 2>/dev/null || err 'Not installed'
-    wait_key
+    systemctl status telemt --no-pager -l 2>/dev/null || err "未安装"
+    presskey
 }
 do_log() {
     banner
-    echo -e "  ${B}* Logs${NC}"
+    echo -e "  ${B}* 运行日志${NC}"
     line
     echo ""
-    journalctl -u telemt -n 30 --no-pager 2>/dev/null || err 'No logs'
-    wait_key
+    journalctl -u telemt -n 30 --no-pager 2>/dev/null || err "无日志"
+    presskey
 }
 do_cfg() {
     banner
-    if [ ! -f "$CF" ]; then err 'No config'; wait_key; return; fi
-    echo -e "  ${B}* Config${NC}"
+    if [ ! -f "$CF" ]; then err "无配置文件"; presskey; return; fi
+    echo -e "  ${B}* 修改配置${NC}"
     line
     echo ""
-    echo -e "  ${B}1)${NC} Change domain"
-    echo -e "  ${B}2)${NC} Change port"
-    echo -e "  ${B}3)${NC} Add user"
-    echo -e "  ${B}4)${NC} Edit file"
-    echo -e "  ${B}0)${NC} Back"
+    echo -e "  ${B}1)${NC} 修改伪装域名"
+    echo -e "  ${B}2)${NC} 修改端口"
+    echo -e "  ${B}3)${NC} 添加用户"
+    echo -e "  ${B}4)${NC} 编辑器打开"
+    echo -e "  ${B}0)${NC} 返回"
     echo ""
-    echo -ne "  ${B}> Choice: ${NC}"
+    echo -ne "  ${B}> 选择: ${NC}"
     read c
     echo ""
     case "$c" in
         1)
-            local od nd yn
+            local od
             od=$(grep tls_domain "$CF" | cut -d'"' -f2)
-            info "Current: $od"
-            nd=$(ask 'New domain' '')
+            info "当前域名: $od"
+            echo -ne "  ${B}> 新域名: ${NC}"
+            read nd
             if [ -n "$nd" ]; then
                 sed -i "s|$od|$nd|g" "$CF"
-                ok 'Updated'
-                yn=$(ask 'Restart? (Y/n)' 'Y')
-                if [ "$yn" != n ] && [ "$yn" != N ]; then
-                    systemctl restart telemt && ok 'Restarted'
+                ok "已更新"
+                echo -ne "  ${B}> 重启? [Y/n]: ${NC}"
+                read yn
+                if [ "$yn" != "n" ] && [ "$yn" != "N" ]; then
+                    systemctl restart telemt && ok "已重启"
                 fi
             fi
             ;;
         2)
-            local op np yn
+            local op
             op=$(grep 'port = ' "$CF" | head -1 | tr -dc '0-9')
-            info "Current: $op"
-            np=$(ask 'New port' '')
+            info "当前端口: $op"
+            echo -ne "  ${B}> 新端口: ${NC}"
+            read np
             if [ -n "$np" ]; then
                 sed -i "s|port = $op|port = $np|g" "$CF"
-                ok 'Updated'
-                yn=$(ask 'Restart? (Y/n)' 'Y')
-                if [ "$yn" != n ] && [ "$yn" != N ]; then
-                    systemctl restart telemt && ok 'Restarted'
+                ok "已更新"
+                echo -ne "  ${B}> 重启? [Y/n]: ${NC}"
+                read yn
+                if [ "$yn" != "n" ] && [ "$yn" != "N" ]; then
+                    systemctl restart telemt && ok "已重启"
                 fi
             fi
             ;;
         3)
-            local nu ns yn
-            nu=$(ask 'New username' '')
+            echo -ne "  ${B}> 新用户名: ${NC}"
+            read nu
             if [ -n "$nu" ]; then
+                local ns
                 ns=$(openssl rand -hex 16)
                 echo "$nu = \"$ns\"" >> "$CF"
-                ok "User: $nu"
-                ok "Secret: $ns"
-                yn=$(ask 'Restart? (Y/n)' 'Y')
-                if [ "$yn" != n ] && [ "$yn" != N ]; then
-                    systemctl restart telemt && ok 'Restarted'
+                ok "用户: $nu"
+                ok "密钥: $ns"
+                echo -ne "  ${B}> 重启? [Y/n]: ${NC}"
+                read yn
+                if [ "$yn" != "n" ] && [ "$yn" != "N" ]; then
+                    systemctl restart telemt && ok "已重启"
                 fi
             fi
             ;;
         4) nano "$CF" 2>/dev/null || vi "$CF";;
         0) return;;
     esac
-    wait_key
+    presskey
 }
 do_rm() {
     banner
-    echo -e "  ${B}* Uninstall${NC}"
+    echo -e "  ${B}* 卸载 Telemt${NC}"
     line
     echo ""
-    local yn dc
-    yn=$(ask 'Uninstall? (y/N)' 'N')
-    if [ "$yn" != y ] && [ "$yn" != Y ]; then
-        info 'Cancelled'
-        wait_key
+    echo -ne "  ${B}> 确定卸载? [y/N]: ${NC}"
+    read yn
+    if [ "$yn" != "y" ] && [ "$yn" != "Y" ]; then
+        info "已取消"
+        presskey
         return
     fi
     systemctl stop telemt 2>/dev/null
     systemctl disable telemt 2>/dev/null
     rm -f "$BP" "$SF"
     systemctl daemon-reload
-    dc=$(ask 'Delete config? (y/N)' 'N')
-    if [ "$dc" = y ] || [ "$dc" = Y ]; then
+    echo -ne "  ${B}> 删除配置? [y/N]: ${NC}"
+    read dc
+    if [ "$dc" = "y" ] || [ "$dc" = "Y" ]; then
         rm -f "$CF"
-        ok 'Config deleted'
+        ok "配置已删除"
     fi
-    ok 'Uninstalled'
-    wait_key
+    ok "已卸载"
+    presskey
 }
 menu() {
     banner
-    echo -e "  ${B}Status:${NC} $(status)"
+    echo -e "  ${B}状态:${NC} $(status)"
     line
     echo ""
     echo -e "  ${B}1)${NC}  安装 Telemt"
@@ -396,15 +401,15 @@ menu() {
     echo ""
     line
     echo ""
-    echo -ne "  ${B}> [0-8]: ${NC}"
+    echo -ne "  ${B}> 选择 [0-8]: ${NC}"
 }
-[ "$(id -u)" -ne 0 ] && echo -e "\n  ${B}[X] Run as root${NC}\n" && exit 1
+[ "$(id -u)" -ne 0 ] && echo -e "\n  ${B}[X] 请用 root 运行${NC}\n" && exit 1
 while true; do
     menu
     read c
     case "$c" in
         1) do_install;; 2) do_update;; 3) do_links;; 4) do_svc;;
         5) do_st;; 6) do_log;; 7) do_cfg;; 8) do_rm;;
-        0) echo ""; echo -e "  ${B}Bye!${NC}"; echo ""; exit 0;;
+        0) echo ""; echo -e "  ${B}再见!${NC}"; echo ""; exit 0;;
     esac
 done
