@@ -1,4 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import os
+
+script = r"""#!/bin/bash
 # Telemt v3 - https://github.com/charmtv/v3mtp
 B='\033[1m'
 DIM='\033[2m'
@@ -408,3 +411,9 @@ while true; do
         0) echo ""; echo -e "  ${B}Bye!${NC}"; echo ""; exit 0;;
     esac
 done
+"""
+
+path = r'c:\Users\Administrator\Desktop\telemt-main\telemt-main\install.sh'
+with open(path, 'wb') as f:
+    f.write(script.encode('utf-8').replace(b'\r\n', b'\n'))
+print('Written with LF line endings')
