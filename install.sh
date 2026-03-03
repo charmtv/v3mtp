@@ -78,6 +78,19 @@ get_public_ip() {
     echo "$ip"
 }
 
+get_random_port() {
+    local port
+    while true; do
+        port=$(( (RANDOM % 62312) + 1024 ))
+        # 检查端口是否空闲
+        if ! ss -tlnp 2>/dev/null | grep -q ":${port} " && \
+           ! netstat -tlnp 2>/dev/null | grep -q ":${port} "; then
+            echo "$port"
+            return
+        fi
+    done
+}
+
 is_installed() {
     [ -f "$BIN_PATH" ] && systemctl list-unit-files 2>/dev/null | grep -q telemt.service
 }
@@ -123,7 +136,8 @@ do_install() {
     # 交互式配置
     echo -e "  ${STAR} ${BOLD}${WHITE}基础配置${NC}"
     echo ""
-    PORT=$(ask "监听端口" "443")
+    RANDOM_PORT=$(get_random_port)
+    PORT=$(ask "监听端口" "${RANDOM_PORT}")
     DOMAIN=$(ask "伪装域名" "www.tesla.com")
     echo ""
     echo -e "  ${STAR} ${BOLD}${WHITE}用户配置${NC}"
