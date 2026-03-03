@@ -1,5 +1,5 @@
 #!/bin/bash
-# Telemt v3 - https://github.com/charmtv/v3mtp
+# Telemt v3 - https://mtp.813099.xyz
 B='\033[1m'
 DIM='\033[2m'
 NC='\033[0m'
@@ -15,7 +15,6 @@ banner() {
     echo -e "${B}     高性能 Telegram MTProto 代理${NC}"
     echo -e "${B}${NC}"
     echo -e "${B}  by: 米粒${NC}"
-    echo -e "${B}  TG群: https://t.me/mlkjfx6${NC}"
     echo -e "${B}=================================================${NC}"
     echo ""
 }
