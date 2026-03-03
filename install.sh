@@ -136,12 +136,12 @@ main() {
     echo ""
 
     PORT=$(ask "监听端口" "443")
-    DOMAIN=$(ask "伪装域名 (TLS 前端)" "www.google.com")
+    DOMAIN=$(ask "伪装域名 (TLS 前端)" "www.tesla.com")
 
     echo ""
     echo -e "  ${STAR} ${BOLD}${WHITE}用户配置${NC}"
     echo ""
-    USERNAME=$(ask "用户名" "hello")
+    USERNAME=$(ask "用户名" "MLKJFX")
 
     echo -ne "  ${ARROW} ${WHITE}密钥方式${NC} ${DIM}[1=自动生成 2=手动输入]${NC}${WHITE}: ${NC}"
     read -r SECRET_MODE
