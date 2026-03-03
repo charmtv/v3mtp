@@ -64,17 +64,9 @@ get_public_ip() {
 }
 
 get_random_port() {
-    local port used_ports
-    used_ports=$(ss -tlnp 2>/dev/null | awk '{print $4}' | grep -oP ':\K[0-9]+$' || true)
-    for i in $(seq 1 20); do
-        port=$(( (RANDOM % 62312) + 1024 ))
-        if ! echo "$used_ports" | grep -qx "$port"; then
-            echo "$port"
-            return
-        fi
-    done
-    # 最终回退
-    echo $(( (RANDOM % 62312) + 1024 ))
+    local port
+    port=$(shuf -i 1024-63335 -n 1 2>/dev/null || echo $(( (RANDOM % 62312) + 1024 )))
+    echo "$port"
 }
 
 is_installed() {
