@@ -6,8 +6,7 @@ if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ]; then
     YELLOW='\033[33m'; CYAN='\033[36m'; NC='\033[0m'
 fi
 CF=/etc/telemt.toml BP=/usr/local/bin/telemt
-SF=/etc/systemd/system/telemt.service
-GH=https://github.com/charmtv/v3mtp
+SF=/etc/systemd/system/telemt.service GH=https://github.com/charmtv/v3mtp
 banner() {
     clear
     echo -e "\n${CYAN}${B}  +---------------------------------------------+"
@@ -117,7 +116,7 @@ links() {
     fi
     if [ -z "$sc" ]; then
         local ln
-        ln=$(grep -v '#' "$CF" 2>/dev/null | grep '= "' | grep -v tls | grep -v public | head -1)
+        ln=$(awk '/^\[access\.users\]/{users=1;next} /^\[/{users=0} users && /= "/{print;exit}' "$CF" 2>/dev/null)
         us=$(echo "$ln" | cut -d= -f1 | tr -d ' ')
         sc=$(echo "$ln" | cut -d'"' -f2)
     fi
@@ -223,6 +222,7 @@ do_install() {
     echo -e "  ${B}[2/5] 写入配置...${NC}"
     cat > "$CF" <<EOF
 [general]
+use_middle_proxy = false
 [general.modes]
 classic = false
 secure = false

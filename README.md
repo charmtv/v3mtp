@@ -32,6 +32,9 @@ journalctl -u telemt -n 50 --no-pager
 ## 最小配置
 
 ```toml
+[general]
+use_middle_proxy = false
+
 [general.modes]
 tls = true
 
