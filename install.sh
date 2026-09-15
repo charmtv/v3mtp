@@ -10,7 +10,7 @@ SF=/etc/systemd/system/telemt.service GH=https://github.com/charmtv/v3mtp
 banner() {
     clear
     echo -e "\n${CYAN}${B}  +---------------------------------------------+"
-    echo -e "  |       Telemt v3 管理工具 - 米粒            |\n  |      高性能 Telegram MTProto 代理          |"
+    echo -e "  |           Telemt v3 管理工具               |\n  |      高性能 Telegram MTProto 代理          |"
     echo -e "  +---------------------------------------------+${NC}\n"
 }
 line() { echo -e "  ${DIM}---------------------------------------------${NC}"; }
@@ -184,9 +184,9 @@ do_install() {
     done
     echo ""; echo -e "  ${B}* 用户配置${NC}"
     echo ""; while true; do
-        echo -ne "  ${B}> 用户名 [MLKJFX]: ${NC}"
+        echo -ne "  ${B}> 用户名 [proxy]: ${NC}"
         read -r input_user
-        UN=${input_user:-MLKJFX}
+        UN=${input_user:-proxy}
         valid_user "$UN" && break
         warn "用户名只能包含字母、数字、下划线和连字符"
     done
