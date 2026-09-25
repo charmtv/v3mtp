@@ -661,32 +661,62 @@ impl Stats {
             .unwrap_or(0)
     }
     
+    /// Adds `bytes` received from the client to the user's traffic counter.
+    /// No-op when per-user telemetry is disabled.
     pub fn add_user_octets_from(&self, user: &str, bytes: u64) {
         if !self.telemetry_user_enabled() {
+            return;
+        }
+        // Called for every relayed chunk: a shared-lock lookup of an existing entry
+        // avoids the key allocation and exclusive shard lock taken by `entry()`,
+        // which is only needed the first time a user is seen.
+        if let Some(stats) = self.user_stats.get(user) {
+            stats.octets_from_client.fetch_add(bytes, Ordering::Relaxed);
             return;
         }
         self.user_stats.entry(user.to_string()).or_default()
             .octets_from_client.fetch_add(bytes, Ordering::Relaxed);
     }
     
+    /// Adds `bytes` sent to the client to the user's traffic counter.
+    /// No-op when per-user telemetry is disabled.
     pub fn add_user_octets_to(&self, user: &str, bytes: u64) {
         if !self.telemetry_user_enabled() {
+            return;
+        }
+        // Same shared-lock fast path as `add_user_octets_from`.
+        if let Some(stats) = self.user_stats.get(user) {
+            stats.octets_to_client.fetch_add(bytes, Ordering::Relaxed);
             return;
         }
         self.user_stats.entry(user.to_string()).or_default()
             .octets_to_client.fetch_add(bytes, Ordering::Relaxed);
     }
     
+    /// Increments the user's count of messages received from the client.
+    /// No-op when per-user telemetry is disabled.
     pub fn increment_user_msgs_from(&self, user: &str) {
         if !self.telemetry_user_enabled() {
+            return;
+        }
+        // Same shared-lock fast path as `add_user_octets_from`.
+        if let Some(stats) = self.user_stats.get(user) {
+            stats.msgs_from_client.fetch_add(1, Ordering::Relaxed);
             return;
         }
         self.user_stats.entry(user.to_string()).or_default()
             .msgs_from_client.fetch_add(1, Ordering::Relaxed);
     }
     
+    /// Increments the user's count of messages sent to the client.
+    /// No-op when per-user telemetry is disabled.
     pub fn increment_user_msgs_to(&self, user: &str) {
         if !self.telemetry_user_enabled() {
+            return;
+        }
+        // Same shared-lock fast path as `add_user_octets_from`.
+        if let Some(stats) = self.user_stats.get(user) {
+            stats.msgs_to_client.fetch_add(1, Ordering::Relaxed);
             return;
         }
         self.user_stats.entry(user.to_string()).or_default()
