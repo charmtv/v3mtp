@@ -111,7 +111,9 @@ links() {
         [ -z "$ip" ] && ip=YOUR_IP
     fi
     if [ -z "$pt" ]; then
-        pt=$(grep 'port = ' "$CF" 2>/dev/null | head -1 | tr -dc '0-9')
+        # Links advertise public_port when set, otherwise the [server] listen port.
+        pt=$(sed -n 's/^[[:space:]]*public_port[[:space:]]*=[[:space:]]*\([0-9][0-9]*\).*/\1/p' "$CF" 2>/dev/null | head -1)
+        [ -z "$pt" ] && pt=$(get_port)
         [ -z "$pt" ] && pt=443
     fi
     if [ -z "$sc" ]; then
@@ -121,7 +123,7 @@ links() {
         sc=$(echo "$ln" | cut -d'"' -f2)
     fi
     if [ -z "$dm" ]; then
-        dm=$(grep tls_domain "$CF" 2>/dev/null | cut -d'"' -f2)
+        dm=$(sed -n 's/^[[:space:]]*tls_domain[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$CF" 2>/dev/null | head -1)
         [ -z "$dm" ] && dm=www.tesla.com
     fi
     local hd
@@ -422,12 +424,12 @@ do_cfg() {
         case "$c" in
         1)
             local od
-            od=$(grep tls_domain "$CF" | cut -d'"' -f2)
+            od=$(sed -n 's/^[[:space:]]*tls_domain[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' "$CF" | head -1)
             info "当前域名: $od"
             echo -ne "  ${B}> 新域名: ${NC}"
             read -r nd
             if [ -n "$nd" ] && valid_domain "$nd"; then
-                sed -i.bak "0,/^[[:space:]]*tls_domain[[:space:]]*=/s||tls_domain = \"$nd\"|" "$CF"
+                sed -i.bak "0,/^[[:space:]]*tls_domain[[:space:]]*=/s|^[[:space:]]*tls_domain[[:space:]]*=.*|tls_domain = \"$nd\"|" "$CF"
                 ok "已更新"
                 echo -ne "  ${B}> 重启? [Y/n]: ${NC}"
                 read -r yn
@@ -440,7 +442,7 @@ do_cfg() {
             ;;
         2)
             local op
-            op=$(grep 'port = ' "$CF" | head -1 | tr -dc '0-9')
+            op=$(get_port)
             info "当前端口: $op"
             echo -ne "  ${B}> 新端口: ${NC}"
             read -r np
@@ -448,7 +450,7 @@ do_cfg() {
                 cp -p "$CF" "${CF}.bak"
                 sed -i \
                     -e "s/^[[:space:]]*public_port[[:space:]]*=.*/public_port = $np/" \
-                    -e "0,/^[[:space:]]*port[[:space:]]*=/s//port = $np/" "$CF"
+                    -e "0,/^[[:space:]]*port[[:space:]]*=/s/^[[:space:]]*port[[:space:]]*=.*/port = $np/" "$CF"
                 ok "已更新"
                 echo -ne "  ${B}> 重启? [Y/n]: ${NC}"
                 read -r yn
