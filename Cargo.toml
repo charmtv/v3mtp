@@ -73,3 +73,9 @@ futures = "0.3"
 [[bench]]
 name = "crypto_bench"
 harness = false
+
+# Whole-program optimization: lets LLVM inline across crate boundaries on the
+# relay/crypto hot paths and shrinks the binary, at the cost of slower release builds.
+[profile.release]
+lto = "fat"
+codegen-units = 1
